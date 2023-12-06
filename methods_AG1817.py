@@ -6,16 +6,15 @@ from math import (
     cosh,
     degrees,
     radians,
-    asin,
     sin,
     sinh,
     sqrt,
     tan,
     pi,
 )
+
 import numpy as np
 import sympy as sp
-import icecream as ic
 
 # Ellipsoid parameters: semi major axis in metres, reciprocal flattening.
 GRS80 = 6378137, 298.257222101
@@ -40,16 +39,16 @@ def geodetic_to_geocentric(ellipsoid, latitude, longitude, height):
     - y: float, geocentric y-coordinate
     - z: float, geocentric z-coordinate
     """
-    φ = radians(latitude)
-    λ = radians(longitude)
-    sin_φ = sin(φ)
+    latitude = radians(latitude)
+    longitude = radians(longitude)
+    sin_latitude = sin(latitude)
     a, rf = ellipsoid  # semi-major axis, reciprocal flattening
     e2 = 1 - (1 - 1 / rf) ** 2  # eccentricity squared
-    n = a / sqrt(1 - e2 * sin_φ**2)  # prime vertical radius
-    r = (n + height) * cos(φ)  # perpendicular distance from z axis
-    x = r * cos(λ)
-    y = r * sin(λ)
-    z = (n * (1 - e2) + height) * sin_φ
+    n = a / sqrt(1 - e2 * sin_latitude ** 2)  # prime vertical radius
+    r = (n + height) * cos(latitude)  # perpendicular distance from z axis
+    x = r * cos(longitude)
+    y = r * sin(longitude)
+    z = (n * (1 - e2) + height) * sin_latitude
     return x, y, z
 
 
@@ -96,11 +95,11 @@ def spherical_to_rectangular(r, latitude, longitude):
     Returns:
         tuple: The rectangular coordinates (x, y, z).
     """
-    φ = radians(latitude)
-    λ = radians(longitude)
-    x = r * cos(φ) * cos(λ)
-    y = r * cos(φ) * sin(λ)
-    z = r * sin(φ)
+    latitude = radians(latitude)
+    longitude = radians(longitude)
+    x = r * cos(latitude) * cos(longitude)
+    y = r * cos(latitude) * sin(longitude)
+    z = r * sin(latitude)
     return x, y, z
 
 
@@ -114,15 +113,15 @@ def rectangular_to_spherical(x, y, z):
     z (float): The z-coordinate.
 
     Returns:
-    tuple: A tuple containing the spherical coordinates (r, φ, λ).
+    tuple: A tuple containing the spherical coordinates (r, latitude, longitude).
         r (float): The radial distance.
-        φ (float): The polar angle in degrees.
-        λ (float): The azimuthal angle in degrees.
+        latitude (float): The polar angle in degrees.
+        longitude (float): The azimuthal angle in degrees.
     """
     r = sqrt((x**2) + (y**2) + (z**2))
-    φ = degrees(atan(z / sqrt(x**2 + y**2)))
-    λ = degrees(atan(y / x))
-    return r, φ, λ
+    latitude = degrees(atan(z / sqrt(x ** 2 + y ** 2)))
+    longitude = degrees(atan(y / x))
+    return r, latitude, longitude
 
 
 def iterative_Cartesian_to_geodetic(ellipsoid, x, y, z):
@@ -131,7 +130,8 @@ def iterative_Cartesian_to_geodetic(ellipsoid, x, y, z):
     using an iterative algorithm.
 
     Args:
-        ellipsoid (tuple): A tuple containing the semi-major axis (a) and the reciprocal of the flattening (rf) of the ellipsoid.
+        ellipsoid (tuple): A tuple containing the semi-major axis (a)
+            and the reciprocal of the flattening (rf) of the ellipsoid.
         x (float): The x-coordinate in Cartesian coordinates.
         y (float): The y-coordinate in Cartesian coordinates.
         z (float): The z-coordinate in Cartesian coordinates.
@@ -143,7 +143,7 @@ def iterative_Cartesian_to_geodetic(ellipsoid, x, y, z):
     height_old = 0
     latitude_old = 0
     dh = 1
-    dφ = 1
+    d_latitude = 1
 
     a, rf = ellipsoid
     e2 = 1 - (1 - 1 / rf) ** 2
@@ -151,17 +151,17 @@ def iterative_Cartesian_to_geodetic(ellipsoid, x, y, z):
     longitude_old = degrees(atan(y / x))
 
     i = 0
-    while abs(dh) > 0.001 or abs(dφ) > 1e-09:
+    while abs(dh) > 0.001 or abs(d_latitude) > 1e-09:
         latitude_new = degrees(atan(z / (p * (1 - (e2 * (n / (n + height_old)))))))
         n = a / sqrt(1 - e2 * sin(radians(latitude_new)) ** 2)
         height_new = (p / cos(radians(latitude_new))) - n
         dh = height_new - height_old
-        dφ = latitude_new - latitude_old
+        d_latitude = latitude_new - latitude_old
         latitude_old = latitude_new
         height_old = height_new
         i = i + 1
         print("iteration: ", i)
-        print("dh: ", dh, "\n", "dφ: ", dφ)
+        print("dh: ", dh, "\n", "d_latitude: ", d_latitude)
         print(
             "latitude: ",
             latitude_new,
@@ -188,39 +188,41 @@ def M_N_W(ellipsoid, latitude):
     """
     a, rf = ellipsoid  # semi-major axis, reciprocal flattening
     e2 = 1 - (1 - 1 / rf) ** 2  # eccentricity squared
-    φm = radians(latitude)
-    W = sqrt((1 - e2 * sin(φm) ** 2))
+    latitude_m = radians(latitude)
+    W = sqrt((1 - e2 * sin(latitude_m) ** 2))
     N = a / W
     M = (a * (1 - e2)) / W**3
     return M, N, W
 
 
-def gauss_mean_arguments(ellipsoid, φ1, φ2, λ1, λ2):
+def gauss_mean_arguments(ellipsoid, latitude_1, latitude_2, longitude_1, longitude_2):
     """
     Calculate the distance and azimuth between two points on an ellipsoid using the Gauss mean method.
 
     Args:
         ellipsoid (tuple): A tuple containing the semi-major axis and reciprocal flattening of the ellipsoid.
-        φ1 (float): Latitude of the first point in degrees.
-        φ2 (float): Latitude of the second point in degrees.
-        λ1 (float): Longitude of the first point in degrees.
-        λ2 (float): Longitude of the second point in degrees.
+        latitude_1 (float): Latitude of the first point in degrees.
+        latitude_2 (float): Latitude of the second point in degrees.
+        longitude_1 (float): Longitude of the first point in degrees.
+        longitude_2 (float): Longitude of the second point in degrees.
 
     Returns:
-        tuple: A tuple containing the distance between the points in meters, the forward azimuth from the first point to the second point in degrees, and the backward azimuth from the second point to the first point in degrees.
+        tuple: A tuple containing the distance between the points in meters,
+            the forward azimuth from the first point to the second point in degrees,
+            and the backward azimuth from the second point to the first point in degrees.
     """
     a, rf = ellipsoid  # semi-major axis, reciprocal flattening
     e2 = 1 - (1 - 1 / rf) ** 2  # eccentricity squared
     e_p = sqrt(e2 / (1 - e2))
-    φ_m = (radians(φ1) + radians(φ2)) / 2
-    λ_m = (radians(λ1) + radians(λ2)) / 2
+    latitude_m = (radians(latitude_1) + radians(latitude_2)) / 2
+    longitude_m = (radians(longitude_1) + radians(longitude_2)) / 2
 
-    W = sqrt((1 - (e2 * (sin(φ_m) ** 2))))
+    W = sqrt((1 - (e2 * (sin(latitude_m) ** 2))))
     N = a / W
     M = (a * (1 - e2)) / (W**3)
 
-    n_m2 = (e_p * cos(φ_m)) ** 2
-    t_m2 = tan(φ_m) ** 2
+    n_m2 = (e_p * cos(latitude_m)) ** 2
+    t_m2 = tan(latitude_m) ** 2
     t_m4 = t_m2**2
     v_m2 = 1 + n_m2
     v_m4 = v_m2**2
@@ -234,38 +236,38 @@ def gauss_mean_arguments(ellipsoid, φ1, φ2, λ1, λ2):
     c7 = v_m2 / 12
     c8 = (3 + 5 * n_m2) / (24 * v_m2)
     c9 = 1 / 2880
-    c10 = ((4 + 15 * t_m2) * (cos(φ_m) ** 2)) / 1440
-    c11 = ((12 * t_m2 + t_m4) * (cos(φ_m) ** 4)) / 2880
-    c12 = ((14 + 40 * t_m2 + 15 * t_m4) * (cos(φ_m) ** 4)) / 2880
+    c10 = ((4 + 15 * t_m2) * (cos(latitude_m) ** 2)) / 1440
+    c11 = ((12 * t_m2 + t_m4) * (cos(latitude_m) ** 4)) / 2880
+    c12 = ((14 + 40 * t_m2 + 15 * t_m4) * (cos(latitude_m) ** 4)) / 2880
     c13 = 1 / 192
-    c14 = (sin(φ_m) ** 2) / 48
-    c15 = ((7 - 6 * t_m2) * (cos(φ_m) ** 4)) / 1440
+    c14 = (sin(latitude_m) ** 2) / 48
+    c15 = ((7 - 6 * t_m2) * (cos(latitude_m) ** 4)) / 1440
 
-    dφ = radians(φ2) - radians(φ1)
-    dφ_2 = dφ**2
-    dλ = radians(λ2) - radians(λ1)
-    dλ_2 = dλ**2
+    d_latitude = radians(latitude_2) - radians(latitude_1)
+    d_latitude_2 = d_latitude ** 2
+    d_longitude = radians(longitude_2) - radians(longitude_1)
+    d_longitude_2 = d_longitude ** 2
 
-    delta_1 = ((dφ * cos(0.5 * dλ)) / c1) * (
+    delta_1 = ((d_latitude * cos(0.5 * d_longitude)) / c1) * (
         1
-        + (c5 * (cos(φ_m) ** 2) * dλ_2)
-        - (c6 * dφ_2)
-        - (((c10 * dφ_2 * dλ_2) + (c12 * (dλ_2**2))))
+        + (c5 * (cos(latitude_m) ** 2) * d_longitude_2)
+        - (c6 * d_latitude_2)
+        - (((c10 * d_latitude_2 * d_longitude_2) + (c12 * (d_longitude_2 ** 2))))
     )
-    delta_2 = (dλ * cos(φ_m) / c2) * (
+    delta_2 = (d_longitude * cos(latitude_m) / c2) * (
         1
-        - c3 * sin(φ_m) ** 2 * dλ_2
-        + c4 * dφ_2
-        + (c9 * dφ_2**2 - c10 * dφ_2 * dλ_2 - c11 * dλ_2**2)
+        - c3 * sin(latitude_m) ** 2 * d_longitude_2
+        + c4 * d_latitude_2
+        + (c9 * d_latitude_2 ** 2 - c10 * d_latitude_2 * d_longitude_2 - c11 * d_longitude_2 ** 2)
     )
     d_alpha = degrees(
-        sin(φ_m)
-        * dλ
+        sin(latitude_m)
+        * d_longitude
         * (
             1
-            + c7 * cos(φ_m) ** 2 * dλ_2
-            + c8 * dφ_2
-            + (c13 * dφ_2**2 - c14 * dφ_2 * dλ_2 + c15 * dλ_2**2)
+            + c7 * cos(latitude_m) ** 2 * d_longitude_2
+            + c8 * d_latitude_2
+            + (c13 * d_latitude_2 ** 2 - c14 * d_latitude_2 * d_longitude_2 + c15 * d_longitude_2 ** 2)
         )
     )
 
@@ -407,10 +409,10 @@ def oblique_orthographic_azimuthal_projection(
         radians(latitude_0)
     ) * cos(radians(latitude)) * cos(radians(longitude) - radians(longitude_0))
     k = 1
-    𝜉 = sin(radians(latitude_0)) * sin(radians(latitude)) + cos(
+    xi = sin(radians(latitude_0)) * sin(radians(latitude)) + cos(
         radians(latitude_0) * cos(radians(latitude))
     ) * cos(radians(longitude) - radians(longitude_0))
-    # print("\n", "h: ", h, "\n", "k: ", k, "\n", "𝜉: ", 𝜉)
+    # print("\n", "h: ", h, "\n", "k: ", k, "\n", "xi: ", xi)
     return
 
 
@@ -712,10 +714,12 @@ def normal_mercator_projection_for_ellipsoid(
         longitude_0 (float): The reference longitude in degrees.
         latitude (float): The latitude in degrees.
         longitude (float): The longitude in degrees.
-        ellipsoid (tuple): A tuple containing the semi-major axis (a) and the reciprocal of the flattening (rf) of the ellipsoid.
+        ellipsoid (tuple): A tuple containing the semi-major axis (a)
+            and the reciprocal of the flattening (rf) of the ellipsoid.
 
     Returns:
-        tuple: A tuple containing the projected x-coordinate, projected y-coordinate, scale factor (h), convergence factor (k), and eccentricity squared (epsilon).
+        tuple: A tuple containing the projected x-coordinate, projected y-coordinate, scale factor (h),
+            convergence factor (k), and eccentricity squared (epsilon).
 
     """
 
