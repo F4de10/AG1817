@@ -44,7 +44,7 @@ def geodetic_to_geocentric(ellipsoid, latitude, longitude, height):
     sin_latitude = sin(latitude)
     a, rf = ellipsoid  # semi-major axis, reciprocal flattening
     e2 = 1 - (1 - 1 / rf) ** 2  # eccentricity squared
-    n = a / sqrt(1 - e2 * sin_latitude ** 2)  # prime vertical radius
+    n = a / sqrt(1 - e2 * sin_latitude**2)  # prime vertical radius
     r = (n + height) * cos(latitude)  # perpendicular distance from z axis
     x = r * cos(longitude)
     y = r * sin(longitude)
@@ -68,11 +68,11 @@ def geocentric_to_geodetic(ellipsoid, x, y, z):
     """
     a, rf = ellipsoid
     e2 = 1 - (1 - 1 / rf) ** 2
-    longitude = degrees(atan(y / x))
-    p = sqrt((x**2) + (y**2))
-    theta = atan(z / (p * sqrt(1 - e2)))
+    longitude = degrees(np.arctan(y / x))
+    p = np.sqrt((x**2) + (y**2))
+    theta = np.arctan(z / (p * np.sqrt(1 - e2)))
     latitude = degrees(
-        atan(
+        np.arctan(
             (z + (((a * e2) / (sqrt(1 - e2))) * (sin(theta) ** 3)))
             / (p - (a * e2 * cos(theta) ** 3))
         )
@@ -119,7 +119,7 @@ def rectangular_to_spherical(x, y, z):
         longitude (float): The azimuthal angle in degrees.
     """
     r = sqrt((x**2) + (y**2) + (z**2))
-    latitude = degrees(atan(z / sqrt(x ** 2 + y ** 2)))
+    latitude = degrees(atan(z / sqrt(x**2 + y**2)))
     longitude = degrees(atan(y / x))
     return r, latitude, longitude
 
@@ -244,21 +244,25 @@ def gauss_mean_arguments(ellipsoid, latitude_1, latitude_2, longitude_1, longitu
     c15 = ((7 - 6 * t_m2) * (cos(latitude_m) ** 4)) / 1440
 
     d_latitude = radians(latitude_2) - radians(latitude_1)
-    d_latitude_2 = d_latitude ** 2
+    d_latitude_2 = d_latitude**2
     d_longitude = radians(longitude_2) - radians(longitude_1)
-    d_longitude_2 = d_longitude ** 2
+    d_longitude_2 = d_longitude**2
 
     delta_1 = ((d_latitude * cos(0.5 * d_longitude)) / c1) * (
         1
         + (c5 * (cos(latitude_m) ** 2) * d_longitude_2)
         - (c6 * d_latitude_2)
-        - (((c10 * d_latitude_2 * d_longitude_2) + (c12 * (d_longitude_2 ** 2))))
+        - (((c10 * d_latitude_2 * d_longitude_2) + (c12 * (d_longitude_2**2))))
     )
     delta_2 = (d_longitude * cos(latitude_m) / c2) * (
         1
         - c3 * sin(latitude_m) ** 2 * d_longitude_2
         + c4 * d_latitude_2
-        + (c9 * d_latitude_2 ** 2 - c10 * d_latitude_2 * d_longitude_2 - c11 * d_longitude_2 ** 2)
+        + (
+            c9 * d_latitude_2**2
+            - c10 * d_latitude_2 * d_longitude_2
+            - c11 * d_longitude_2**2
+        )
     )
     d_alpha = degrees(
         sin(latitude_m)
@@ -267,7 +271,11 @@ def gauss_mean_arguments(ellipsoid, latitude_1, latitude_2, longitude_1, longitu
             1
             + c7 * cos(latitude_m) ** 2 * d_longitude_2
             + c8 * d_latitude_2
-            + (c13 * d_latitude_2 ** 2 - c14 * d_latitude_2 * d_longitude_2 + c15 * d_longitude_2 ** 2)
+            + (
+                c13 * d_latitude_2**2
+                - c14 * d_latitude_2 * d_longitude_2
+                + c15 * d_longitude_2**2
+            )
         )
     )
 
@@ -787,7 +795,6 @@ def transverse_mercator_projection_for_sphere(
     x = R * (atan(tan(latitude) / cos(longitude - longitude_0)) - latitude_0)
     y = 0.5 * R * np.log((1 + B) / (1 - B))
     h = k = 1 / sqrt(1 - (B**2))
-    print("x: ", round(x, 4), "\n", "y: ", round(y, 4))
 
     return x, y, h, k
 
@@ -868,8 +875,6 @@ def transverse_mercator_projection_for_ellipsoid(
         )
         + 500000  # 500 km false easting
     )
-
-    print("x: ", round(x, 4), "\n", "y: ", round(y, 4))
     return x, y
 
 
