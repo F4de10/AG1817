@@ -1,4 +1,3 @@
-import numpy as np
 from methods_AG1817 import *
 
 # problem 2.1
@@ -51,19 +50,19 @@ print(
 # uppg 2.3
 print("2.3)")
 ellipsoid = GRS80
-r, φ, λ = iterative_Cartesian_to_geodetic(ellipsoid, x, y, z)
+r, φ, λ = iterative_cartesian_to_geodetic(ellipsoid, x, y, z)
 print("r: ", r, "\n", "φ: ", φ, "\n", "λ: ", λ, "\n")
 
 # 2.4
 print("2.4)")
 # ITRF97
 print("ITRF97:")
-P = np.matrix([[3370641.970], [711866.128], [5349796.160]])
+P = np.array([[3370641.970], [711866.128], [5349796.160]])
 print(P, "\n")
 
 # GRS80
 print("GRS80:")
-grs = np.matrix([[57.395483300], [11.925395149], [43.372]])
+grs = np.array([[57.395483300], [11.925395149], [43.372]])
 print(grs, "\n")
 φ = radians(grs[0, 0])
 λ = radians(grs[1, 0])
@@ -71,7 +70,7 @@ h = radians(grs[2, 0])
 
 # a)
 print("a)")
-Q = np.matrix(
+Q = np.array(
     [
         [-sin(φ) * cos(λ), -sin(φ) * sin(λ), cos(φ)],
         [-sin(λ), cos(λ), 0],
@@ -82,13 +81,13 @@ print("Q is: ", "\n", Q, "\n")
 
 # b)
 print("b)")
-A = np.matrix([[3098889.388], [1011032.696], [5463980.133]])
+A = np.array([[3098889.388], [1011032.696], [5463980.133]])
 D = Q * (A - P)
 print("point A in P-NEU: ", "\n", D, "\n")
 
 # c)
 print("c)")
-vel_1 = np.matrix([[-0.0136], [0.0147], [0.0084]])
+vel_1 = np.array([[-0.0136], [0.0147], [0.0084]])
 vel_2 = Q * vel_1
 print(
     "velocity vector: ",

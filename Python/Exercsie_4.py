@@ -41,7 +41,7 @@ latitude_2 = 65
 R = 6371000.000
 
 print("a)")
-Abers_projection(
+abers_projection(
     latitude_1, latitude_2, latitude_0, longitude_0, latitude, longitude, R
 )
 print("\n", "b)")
