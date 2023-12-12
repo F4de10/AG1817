@@ -36,7 +36,7 @@ def geodetic_to_geocentric(ellipsoid, latitude, longitude, height):
     return x, y, z
 
 
-def geocentric_to_geodetic(ellipsoid, x, y, z):
+def geocentric_to_geodetic(ellipsoid, x, y, z, height_0=None):
     """
     Convert geocentric coordinates to geodetic coordinates.
 
@@ -55,12 +55,19 @@ def geocentric_to_geodetic(ellipsoid, x, y, z):
     longitude = np.degrees(np.arctan(y / x))
     p = np.sqrt((x**2) + (y**2))
     theta = np.arctan(z / (p * np.sqrt(1 - e2)))
-    latitude = np.degrees(
-        np.arctan(
-            (z + (((a * e2) / (np.sqrt(1 - e2))) * (np.sin(theta) ** 3)))
-            / (p - (a * e2 * np.cos(theta) ** 3))
+
+    if height_0 == 0:
+        latitude = np.degrees(
+            np.arctan((1 / (1 - e2)) * (z / (np.sqrt((x**2) + (y**2)))))
         )
-    )
+    else:
+        latitude = np.degrees(
+            np.arctan(
+                (z + (((a * e2) / (np.sqrt(1 - e2))) * (np.sin(theta) ** 3)))
+                / (p - (a * e2 * np.cos(theta) ** 3))
+            )
+        )
+
     N = a / (np.sqrt(1 - e2 * np.sin(np.radians(latitude)) ** 2))
     height = (p / np.cos(np.radians(latitude))) - N
 
@@ -807,7 +814,7 @@ def transverse_mercator_projection_for_sphere(
 
 
 def transverse_mercator_projection_for_ellipsoid(
-    latitude_0, longitude_0, latitude, longitude, ellipsoid, scale_factor
+    latitude_0, longitude_0, latitude, longitude, ellipsoid, scale_factor, false_easting
 ):
     """
     Transforms geographic coordinates (latitude, longitude) to projected coordinates (x, y)
@@ -828,7 +835,7 @@ def transverse_mercator_projection_for_ellipsoid(
     a, rf = ellipsoid
     e2 = 1 - (1 - 1 / rf) ** 2
     b = a * (1 - 1 / rf)
-    latitude_0, latitude = (np.radians(latitude_0), np.radians(latitude))
+    latitude_0, latitude = np.radians(latitude_0), np.radians(latitude)
 
     n = (a - b) / (a + b)
     n2 = n**2
@@ -885,7 +892,7 @@ def transverse_mercator_projection_for_ellipsoid(
             + beta_3 * np.cos(6 * epsilon_prim) * np.sinh(6 * eta_prim)
             + beta_4 * np.cos(8 * epsilon_prim) * np.sinh(8 * eta_prim)
         )
-        + 500000  # 500 km false easting
+        + false_easting  # 500 km false easting
     )
     return x, y
 
