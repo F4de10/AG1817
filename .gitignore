@@ -342,3 +342,6 @@ pyrightconfig.json
 .Trashes
 ehthumbs.db
 Thumbs.db
+*.xml
+*.iml
+.idea/.gitignore
