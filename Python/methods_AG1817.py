@@ -295,7 +295,7 @@ def simple_projection(projection):
     latitude, longitude = sp.symbols("latitude longitude", real=True)
 
     eratosthenes = R * latitude, R * longitude
-    lambert = R * np.sin(latitude), R * longitude
+    lambert = R * sp.sin(latitude), R * longitude
 
     x, y = None, None
     if projection == "eratosthenes":
@@ -370,7 +370,7 @@ def simple_projection(projection):
 
     # are the projections of the meridians and parallel circles vertical to each other?
     print("\nd)")
-    theta_prim = np.degrees(np.arccos(f / np.sqrt(e * g)))
+    theta_prim = sp.acos(f / sp.sqrt(e * g))
     print("\nthe angle between the projections of the meridians and parallel circles:")
     print("θ' = ", theta_prim)
     if theta_prim == 90:

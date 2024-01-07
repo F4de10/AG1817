@@ -2,7 +2,7 @@ from methods_AG1817 import *
 
 print("\n", "4.1)", "\n")
 
-simple_projection("eratostenes")
+simple_projection("eratosthenes")
 
 print("\n", "4.2)", "\n")
 
@@ -15,7 +15,7 @@ latitude = 50 + 5 / 60 + 10 / 3600
 longitude = 14 + 24 / 60 + 50 / 3600
 
 print("a)")
-oblique_orographic_azimuthal_projection(
+oblique_orthographic_azimuthal_projection(
     latitude_0, longitude_0, latitude, longitude, 6371000.000
 )
 print("\n", "b)")
